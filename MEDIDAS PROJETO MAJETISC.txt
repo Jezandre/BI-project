@@ -1,0 +1,525 @@
+01 Quantidade Total = 
+SUM(fVendas[Quantidade])
+
+02 Frete Total = 
+SUM(fVendas[VL.Frete])
+
+03 Quantidade Máxima por Item = 
+MAX(fVendas[Quantidade])
+
+04 Qtde Média por Item de venda = 
+AVERAGE(fVendas[Quantidade])
+
+05 Total Venda Bruto = 
+SUMX(fVendas, RELATED(dProduto[Valor Unitario])*[Quantidade])
+
+06 Média Bruta por Item = AVERAGEX(
+    fVendas,
+    fVendas[Quantidade]*RELATED(dProduto[Valor Unitario])
+)
+
+07 Total do Custo = 
+sumx(fVendas,RELATED(dProduto[Custo Unitário])*fVendas[Quantidade])
+
+08 Custo Médio por Item = 
+AVERAGEX(fVendas, RELATED(dProduto[Custo Unitário])*fVendas[Quantidade])
+
+09 Máximo Item de Venda = 
+MAXX(fVendas, fVendas[Quantidade]* RELATED(dProduto[Valor Unitario])
+)
+
+10 Mínimo Item de Venda = MINX(fVendas,
+fVendas[Quantidade]*RELATED(dProduto[Valor Unitario])
+)
+
+11 Quantidade de vendas = 
+DISTINCTCOUNT(fVendas[idNota])
+
+12 Quantidade de Itens de venda = 
+COUNTROWS(fVendas)
+
+13 Total do Desconto = 
+SUMX(fVendas,[05 Total Venda Bruto]*(fVendas[Desconto]/100)
+)
+
+14 Receita Líquida = 
+[05 Total Venda Bruto]-[15 Descontos totais]
+
+15 Descontos totais = 
+[07 Total do Custo]+[13 Total do Desconto]+[02 Frete Total]
+
+16 Ticket Médio = 
+DIVIDE([05 Total Venda Bruto],[11 Quantidade de vendas],0)
+
+17 Margem de Lucro (%) = 
+DIVIDE([14 Receita Líquida],[05 Total Venda Bruto])
+
+18 Quantidade de Clientes na Base = 
+COUNTROWS(dCliente)
+
+19 Quantidade de Clientes Positivados = 
+DISTINCTCOUNT(fVendas[Cliente])
+
+20 Clientes não positivados = 
+COUNTROWS(EXCEPT(VALUES(dCliente[idCliente]), VALUES(fVendas[Cliente])))
+
+21 America do Norte Vendas = 
+CALCULATE([05 Total Venda Bruto],
+dLocal[Continente] = "América do Norte"
+)
+
+22 America do Norte Clientes Positivados = 
+CALCULATE([19 Quantidade de Clientes Positivados], 
+dLocal[Continente] = "América do Norte" )
+
+23 America do Norte Quantidade de Vendas = 
+CALCULATE([11 Quantidade de vendas], 
+dLocal[Continente] = "América do Norte")
+
+24 America do Norte Receita Líquida = 
+CALCULATE([14 Receita Líquida],
+dLocal[Continente] = "América do Norte")
+
+
+37 Classificação Produto = 
+SWITCH(
+    TRUE(),
+    [14 Receita Líquida] > 4000000, "Excelente",
+    [14 Receita Líquida] > 3000000, "Muito Bom",
+    [14 Receita Líquida] > 2000000, "Bom",
+    [14 Receita Líquida] > 1000000, "Satisfatório",
+    [14 Receita Líquida] > 700000, "Regular",
+    [14 Receita Líquida] > 600000, "Avaliar",
+    [14 Receita Líquida] > 400000, "Atenção",
+    "Ruim"
+    )
+
+
+38 Visão America do Norte = 
+SWITCH(
+    FIRSTNONBLANK(TbMedidas[Código], "BRT"),
+    "BRT", [21 America do Norte Vendas],
+    "QTC", [22 America do Norte Clientes Positivados],
+    "QTV", [23 America do Norte Quantidade de Vendas],
+    "LIQ", [24 America do Norte Receita Líquida]
+
+)
+
+
+
+42 Top 1 Margem de Lucro = 
+var TbAux = 
+SUMMARIZE(
+    dLocal,
+    dLocal[País],
+    "Lucro(%)",
+    [17 Margem de Lucro (%)]
+)
+
+
+RETURN
+
+MAXX(
+    TbAux,
+    [Lucro(%)]
+)
+
+43 Top 1 Lucro (%) America do Norte = 
+CALCULATE(
+    [42 Top 1 Margem de Lucro],
+    dLocal[Continente] = "América do Norte")
+
+47 Visão Geral = 
+SWITCH(
+    FIRSTNONBLANK(TbMedidas[Código], "BRT"),
+    "BRT", [05 Total Venda Bruto],
+    "QTC",[19 Quantidade de Clientes Positivados],
+    "QTV",[11 Quantidade de vendas],
+    "LIQ", [14 Receita Líquida]
+
+)
+
+48 Qtde Países Values = 
+var TbValues = Values (dLocal[País])
+Return
+CountRows (TbValues)
+
+49 Qtde Países All = 
+var TbAll = ALL(dLocal[País])
+
+Return
+
+COUNTROWS(TbAll)
+
+50 Faturamento Bruto Total = 
+CALCULATE([05 Total Venda Bruto], 
+ALL(dVendedor)
+)
+
+51 Valor Bruto Percentual = 
+DIVIDE([05 Total Venda Bruto],
+[50 Faturamento Bruto Total],0)
+
+52 Faturamento Líquido Total = CALCULATE([14 Receita Líquida], 
+ALLSELECTED(dLocal)
+)
+
+53 Valor (%) Líquido por Países selecionado = DIVIDE([14 Receita Líquida],
+[52 Faturamento Líquido Total],0)
+
+54 Ranking Gerentes = 
+var TbGerentes = ALL(dVendedor[Gerente])
+
+Return
+
+RANKX(
+    TbGerentes,
+    [05 Total Venda Bruto]
+)
+
+55 Frete Clientes A = 
+SUMX(
+    FILTER(
+    fVendas,
+    RELATED(dCliente[Classificacao]) = "A"
+
+    ),
+    [02 Frete Total]
+
+)
+
+
+56 Faturamento TOP1 = 
+
+Var TbGerentes = All(dVendedor[Gerente])
+
+Return
+
+Calculate(
+    [05 Total Venda Bruto],
+    FILTER(
+        TbGerentes,
+        [54 Ranking Gerentes] = 1
+    )
+)
+
+57 Faturamento TOP2 = 
+
+Var TbGerentes = All(dVendedor[Gerente])
+
+Return
+
+Calculate(
+    [05 Total Venda Bruto],
+    FILTER(
+        TbGerentes,
+        [54 Ranking Gerentes] = 2
+    )
+)
+
+
+58 Faturamento TOP3 = 
+
+Var TbGerentes = All(dVendedor[Gerente])
+
+Return
+
+Calculate(
+    [05 Total Venda Bruto],
+    FILTER(
+        TbGerentes,
+        [54 Ranking Gerentes] = 3
+    )
+)
+
+59 Rank URL Gerente = 
+RANKX(
+    ALL(dVendedor[URL Gerente]),
+    [05 Total Venda Bruto]
+    )
+
+
+60 Vendas Ano Atual = 
+var AnoAtual =
+MAX ( 
+    dCalendario[Ano]
+)
+
+RETURN
+
+CALCULATE(
+    [05 Total Venda Bruto],
+    dCalendario[Ano] = AnoAtual
+)
+
+61 Meta do Ano = 
+
+var AnoAtual = MAX(dCalendario[Ano])
+
+RETURN
+
+CALCULATE(
+    SUM(fMetas[Meta]),
+    dCalendario[Ano] = AnoAtual
+)
+
+62 Variação da Meta = 
+[60 Vendas Ano Atual] - [61 Meta do Ano]
+
+63 Variação da Meta(%) = 
+DIVIDE(
+    [62 Variação da Meta],
+    [61 Meta do Ano])
+
+64 Vendas Ano Anterior = 
+VAR VVendas = 
+CALCULATE(
+    [60 Vendas Ano Atual],
+    DATEADD(dCalendario[Data], - 1 , YEAR
+    ))
+
+RETURN
+
+IF(ISBLANK(VVendas),0, VVendas)
+
+65 Variação Faturamento (%) = 
+var VVariacao =
+
+DIVIDE(
+    [60 Vendas Ano Atual]-[64 Vendas Ano Anterior],
+    [64 Vendas Ano Anterior],
+    BLANK()
+    )
+
+RETURN 
+
+IF (ISBLANK(VVariacao),0,VVariacao)
+
+66 Total Faturamento Bruto = 
+CALCULATE(
+    [05 Total Venda Bruto],
+    USERELATIONSHIP(
+        fVendas[Data de Faturamento],
+        dCalendario[Data]
+    )
+)
+*
+
+67 Receita liquida do Ano PY = 
+CALCULATE(
+    [14 Receita Líquida],
+    SAMEPERIODLASTYEAR(dCalendario[Data])
+)
+
+
+68 Receita Líquida YoY = 
+[14 Receita Líquida] - [67 Receita liquida do Ano PY]
+
+
+69 Receita Líquid YoY(%) = 
+DIVIDE(
+    [68 Receita Líquida YoY],
+    [67 Receita liquida do Ano PY],
+    0
+
+)
+
+70 Receita Líquida Total Gerla = 
+CALCULATE(
+    [14 Receita Líquida],
+    ALL(dCalendario)
+
+)
+
+
+70 Receita Líquida Total Gerla = 
+CALCULATE(
+    [14 Receita Líquida],
+    ALL(dCalendario)
+
+)
+
+
+72 Receita Líquida Total do Ano = 
+CALCULATE(
+
+    [14 Receita Líquida],
+    ALL(dCalendario[Mês])
+)
+
+
+73  Variação Receita Líquida Total no Ano = 
+[14 Receita Líquida]/[72 Receita Líquida Total do Ano]
+
+
+74 Receita Líquida Acumulada = 
+CALCULATE(
+    [14 Receita Líquida],
+    DATESYTD((dCalendario[Data]))
+
+)
+
+75 Receita Anual Líquida Acumulada = 
+TOTALYTD(
+    [14 Receita Líquida],
+    dCalendario[Data]
+)
+
+
+76 Receita Líquda Acumulada = 
+CALCULATE(
+    [14 Receita Líquida],
+    DATESBETWEEN(
+        dCALENDARIO[DATA],
+        BLANK(),
+        MAX(dCalendario[Data])
+    )
+)
+
+77 Acumulado Móvel 3M = 
+CALCULATE(
+    [14 Receita Líquida],
+    DATESINPERIOD(
+        dCalendario[Data],
+        MAX(dCalendario[Data]),
+        -3,
+        MONTH
+    )
+)
+
+78 SIM Venda Bruta = 
+[05 Total Venda Bruto]*
+( 1 + [SIMQuantidade Valor 2] * (1 + [SIMPreco Valor]))
+
+79 SIM Variação Venda = 
+[78 SIM Venda Bruta] - [05 Total Venda Bruto]
+
+80 SIM Custos = 
+[07 Total do Custo] * 
+(1 + [SIMQuantidade Valor 2]) * (1 +[SIMCustos Valor])
+
+81 SIM Variação Custo = 
+
+[80 SIM Custos]-[07 Total do Custo]
+
+82 SIM Frete = 
+
+[02 Frete Total]*(1 + [SIMFrete Valor])
+
+83 SIM variação Frete = 
+[79 SIM Variação Venda] - [02 Frete Total]
+
+84 SIM Desconto = 
+[13 Total do Desconto]* (1 +[Desconto Valor])
+
+85 SIM Variação desconto = 
+[83 SIM variação Frete] - [13 Total do Desconto]
+
+86 SIM da receita líquida = 
+[78 SIM Venda Bruta] -
+([82 SIM Frete]+[80 SIM Custos]+[84 SIM Desconto])
+
+87 SIM Variação da Receita = 
+[86 SIM da receita líquida] - [14 Receita Líquida]
+
+88 SIM Margem de Lucro percentual (%) = 
+DIVIDE(
+    [86 SIM da receita líquida],
+    [78 SIM Venda Bruta],
+    0
+)
+
+89 SIM Variação receita (%) = 
+DIVIDE(
+    [86 SIM da receita líquida],
+    ABS([14 Receita Líquida]),
+    0
+) -1
+
+90 KPI de Receita = 
+SWITCH(
+    TRUE(),
+    [89 SIM Variação receita (%)]>0.00000001, "🟢",
+    [89 SIM Variação receita (%)]< -0.00000001,"🔴",
+    "🟣"
+)
+
+91 Cross Número de Vendas = 
+Var TbVendas = VALUES(fVendas[idNota])
+
+VAR TdVendasAux =
+CALCULATETABLE(
+    VALUES(fVendas[idNota]),
+    ALL(dProduto),
+    USERELATIONSHIP(fVendas[Produto],'Aux Produto'[IdProduto])
+)
+
+Var TbInter = INTERSECT(TbVendas, TdVendasAux)
+
+Var vResultado = COUNTROWS(TbInter)
+
+RETURN
+IF(
+    SELECTEDVALUE(dProduto[Sub-Categoria])<> SELECTEDVALUE('Aux Produto'[Sub-Categoria]),
+    vResultado,BLANK()
+)
+
+92 Cross Variação = 
+DIVIDE(
+    [91 Cross Número de Vendas],
+    [11 Quantidade de vendas],
+    0
+)
+
+
+93 Janeiro Cross Sell = 
+CALCULATE(
+    [91 Cross Número de Vendas],
+    dCalendario[Mês] = 1
+)
+
+SE (%) Receita Líquida = 
+DIVIDE(
+    [14 Receita Líquida],
+    [SE Receita Líquida],
+    0
+
+
+)
+
+SE Ano Anterior = 
+
+[SE Ano Selecionado]-1
+
+SE Ano Selecionado = 
+VAR Vano = 
+SELECTEDVALUE(dCalendario[Ano])
+
+RETURN
+
+IF(ISBLANK(Vano), MAX(dCalendario[Ano]), Vano)
+
+SE Quantidade Mínima = MIN(fVendas[Quantidade])
+
+
+SE Receita Líquida = 
+CALCULATE(
+    [14 Receita Líquida],
+    all (dLocal)
+        
+
+)
+
+Teste Receita Líquida PM = 
+CALCULATE(
+    [14 Receita Líquida],
+    DATEADD(
+        dCalendario[Data],-1,MONTH)
+)
+
+
+
+
+
+
+
