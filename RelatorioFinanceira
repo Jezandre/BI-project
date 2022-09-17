@@ -1,0 +1,184 @@
+Medidas
+
+
+01 Imposto = 0.1733
+
+02 Comissão  Bruta = sumx(ftComissao, ftComissao[Comissão Bruta])
+
+03 Comissão Líquida = sumx(ftComissao,
+IF(ftComissao[Comissão Bruta]<0,
+0,
+IF(ftComissao[Comissão Bruta]>=0,
+ftComissao[Comissão Bruta]-ftComissao[Comissão Bruta]*[01 Imposto])))
+
+04 Despesas = CALCULATE(SUM(ftComissao[Comissão Bruta]),ftComissao[Comissão Bruta]<0)
+
+05 Valor Repassado = 
+SUMX(
+    ftRepasse,
+    [03 Comissão Líquida]*ftRepasse[Valor])
+    
+ 06 Lucro = 
+[03 Comissão Líquida] - [05 Valor Repassado] + [04 Despesas]
+
+07 Quantidade de produtos vendidos = 
+CALCULATE(
+    COUNTROWS(ftComissao), 
+    ftComissao[Comissão Bruta])
+    
+08 Soma da meta = 
+SUM(
+dMeta[Meta])
+
+09 Meta Acumulada = 
+CALCULATE(
+    [08 Soma da Meta],
+    FILTER(ALL(dTempo),
+    (dTempo[Mês])<=MAX((dTempo[Mês])
+    )))
+    
+ 10 Comissão Acumulada = 
+CALCULATE(
+    [02 Comissão  Bruta],
+    FILTER(ALL(dTempo),
+    (dTempo[Mês])<=MAX((dTempo[Mês])
+    )))
+    
+11 Percentual de Meta = 
+[02 Comissão  Bruta]/[08 Soma da meta]
+
+12 Percentual de meta Acumulada = 
+DIVIDE([10 Comissão Acumulada],
+[09 Meta Acumulada],
+0)
+
+13 Ticket Médio = 
+DIVIDE([02 Comissão  Bruta],[07 Quantidade de produtos vendidos],0)
+
+14 Margem de Lucro (%) = 
+IF([06 Lucro]<0,(DIVIDE((-[03 Comissão Líquida]-[06 Lucro]),[02 Comissão  Bruta])), (DIVIDE([06 Lucro],[02 Comissão  Bruta]))
+)
+
+15 Quantidade de Clientes por operação = 
+DISTINCTCOUNT(ftComissao[ID_Clientes])
+
+16 Quantidade de produtos diferentes = 
+DISTINCTCOUNT(ftComissao[Id_Poduto])
+
+17 Ranking Vendedor = 
+var TbVendedor = ALL(ftVendedor[Nome])
+
+Return
+
+RANKX(
+    TbVendedor,
+    [02 Comissão  Bruta]
+)
+
+18 Ranking Clientes = 
+var TbCliente = ALL(ftClientes[Cliente])
+
+Return
+
+RANKX(
+    TbCliente,
+    [02 Comissão  Bruta]
+)
+
+19 Faturamento TOP1 = 
+
+Var TbVendedor = All(ftVendedor[Nome])
+
+Return
+
+Calculate(
+    [02 Comissão  Bruta],
+    FILTER(
+        TbVendedor,
+        [17 Ranking Vendedor] = 1
+    )
+)
+
+
+20 Faturamento TOP2 = 
+
+Var TbVendedor = All(ftVendedor[Nome])
+
+Return
+
+Calculate(
+    [02 Comissão  Bruta],
+    FILTER(
+        TbVendedor,
+        [17 Ranking Vendedor] = 2
+    )
+)
+
+24 Margem de Lucro TOP1 = 
+
+Var TbVendedor = All(ftVendedor[Nome])
+
+Return
+
+Calculate(
+    [14 Margem de Lucro (%)],
+    FILTER(
+        TbVendedor,
+        [17 Ranking Vendedor] = 1
+    )
+)
+
+
+29 Lucro ou Prejuízo = 
+
+IF([14 Margem de Lucro (%)]<0, "(%) Prejuízo", "(%) Lucro")
+
+30 Percentual Por Subclasse = 
+var vSubclasseAll = CALCULATE([02 Comissão  Bruta], ALL(dSubclasse[SubClasse]))
+
+Return
+
+[03 Comissão Líquida]/vSubclasseAll
+
+
+31 Percentual lucro Por Vendedor = 
+var vSubclasseAll = CALCULATE([02 Comissão  Bruta], ALL(ftVendedor[Nome]))
+
+Return
+
+[03 Comissão Líquida]/vSubclasseAll
+
+
+31 Percentual lucro Por Vendedor = 
+var vSubclasseAll = CALCULATE([02 Comissão  Bruta], ALL(ftVendedor[Nome]))
+
+Return
+
+[03 Comissão Líquida]/vSubclasseAll
+
+
+33 Cliente Lucro (%) TOP1 = 
+
+Var TbVendedor = All(ftClientes[Cliente])
+
+Return
+
+Calculate(
+    [14 Margem de Lucro (%)],
+    FILTER(
+        TbVendedor,
+        [18 Ranking Clientes] = 1
+    )
+)
+
+34 Quantidade de Membros da Equipe = COUNTROWS(ftVendedor)
+
+
+35 Valor médio por membro de equipe = 
+DIVIDE([02 Comissão  Bruta], [34 Quantidade de Membros da Equipe],0)
+
+
+
+
+
+
